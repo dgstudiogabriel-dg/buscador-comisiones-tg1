@@ -1,4 +1,3 @@
-```typescript
 import { NextRequest, NextResponse } from 'next/server';
 
 interface ComisionData {
@@ -25,7 +24,6 @@ export async function GET(request: NextRequest) {
 
     for (const [color, config] of Object.entries(sheetRanges)) {
       try {
-        // Usar la API de Google Sheets directamente con fetch
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(config.range)}?key=${apiKey}`;
 
         const response = await fetch(url);
@@ -64,17 +62,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-```
-
-5. **Guarda el archivo** (Ctrl+S o Cmd+S)
-
-### Opción 2: Desde Terminal (Menos fácil)
-
-1. Abre Terminal en la carpeta del proyecto
-2. Ejecuta:
-
-```bash
-git add app/api/comisiones/route.ts
-git commit -m "fix: Corregir autenticación con Google Sheets API"
-git push origin main
-```
