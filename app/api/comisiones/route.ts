@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+```typescript
 import { NextRequest, NextResponse } from 'next/server';
 
 interface ComisionData {
@@ -7,12 +7,13 @@ interface ComisionData {
 
 export async function GET(request: NextRequest) {
   try {
-    const sheets = google.sheets({
-      version: 'v4',
-      auth: process.env.GOOGLE_SHEETS_API_KEY,
-    });
-
+    const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
     const sheetId = process.env.NEXT_PUBLIC_GOOGLE_SHEETS_ID;
+
+    if (!apiKey || !sheetId) {
+      throw new Error('Faltan variables de entorno: API Key o Sheet ID');
+    }
+
     const sheetRanges = {
       CIAN: { range: 'CIAN-Germán!A:A', doc: 'Germán' },
       MAGENTA: { range: 'MAGENTA-Gabriel!A:A', doc: 'Gabriel' },
@@ -23,21 +24,28 @@ export async function GET(request: NextRequest) {
     const data: ComisionData = {};
 
     for (const [color, config] of Object.entries(sheetRanges)) {
-      const response = await sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: config.range,
-      }, {
-        headers: {
-          referer: 'https://buscador-comisiones-tg1.vercel.app/'
+      try {
+        // Usar la API de Google Sheets directamente con fetch
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(config.range)}?key=${apiKey}`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error(`Error de Google Sheets: ${response.status} ${response.statusText}`);
         }
-      });
 
-      const values = response.data.values || [];
-      const students = values
-        .map((row: string[]) => row[0])
-        .filter((name: string) => name && name.trim() && name !== 'Nombre');
+        const sheetData = await response.json();
+        const values = sheetData.values || [];
 
-      data[color] = { doc: config.doc, count: students.length, students };
+        const students = values
+          .map((row: string[]) => row[0])
+          .filter((name: string) => name && name.trim() && name !== 'Nombre');
+
+        data[color] = { doc: config.doc, count: students.length, students };
+      } catch (sheetError) {
+        console.error(`Error en pestaña ${color}:`, sheetError);
+        data[color] = { doc: config.doc, count: 0, students: [] };
+      }
     }
 
     return NextResponse.json(data, {
@@ -46,12 +54,27 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    console.error('Error en API de comisiones:', error);
     return NextResponse.json(
       {
         error: 'Error al cargar los datos',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: error instanceof Error ? error.message : 'Error desconocido',
       },
       { status: 500 }
     );
   }
 }
+```
+
+5. **Guarda el archivo** (Ctrl+S o Cmd+S)
+
+### Opción 2: Desde Terminal (Menos fácil)
+
+1. Abre Terminal en la carpeta del proyecto
+2. Ejecuta:
+
+```bash
+git add app/api/comisiones/route.ts
+git commit -m "fix: Corregir autenticación con Google Sheets API"
+git push origin main
+```
