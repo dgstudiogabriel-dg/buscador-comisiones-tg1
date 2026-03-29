@@ -1,8 +1,0 @@
-name: Sync to GitHub
-on: push
-jobs:
-  sync:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - run: echo "Código sincronizado en GitHub"
