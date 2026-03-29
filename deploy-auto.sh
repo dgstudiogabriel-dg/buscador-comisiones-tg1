@@ -71,7 +71,8 @@ echo ""
 # PASO 6: Deploy a Vercel
 echo -e "${BLUE}🚀 PASO 6: Desplegando a Vercel...${NC}"
 echo "Esto puede tardar 1-2 minutos..."
-if vercel --prod --yes; then
+VERCEL_TOKEN=$(grep VERCEL_TOKEN .env.local | cut -d'=' -f2)
+if vercel --prod --yes --token "$VERCEL_TOKEN"; then
     echo -e "${GREEN}✅ ¡Deployment a Vercel completado!${NC}"
 else
     echo -e "${YELLOW}⚠️  Error en deployment${NC}"
