@@ -1,51 +1,62 @@
 import { NextResponse } from 'next/server';
+import { google } from 'googleapis';
 
 interface ComisionData {
   [key: string]: { doc: string; count: number; students: string[] };
 }
 
-const CSV_URLS = {
-  CIAN: {
-    url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT85g5Une2zDfOwdYFSpjBoC3ZqJJeU7fnn_xyes3BJXdEk_hPXQ2t9Lmm8qStU6z6IRL3D9mz3vr18/pub?gid=539043842&single=true&output=csv",
-    doc: "Germán",
-  },
-  MAGENTA: {
-    url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT85g5Une2zDfOwdYFSpjBoC3ZqJJeU7fnn_xyes3BJXdEk_hPXQ2t9Lmm8qStU6z6IRL3D9mz3vr18/pub?gid=1047772401&single=true&output=csv",
-    doc: "Gabriel",
-  },
-  AMARILLA: {
-    url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT85g5Une2zDfOwdYFSpjBoC3ZqJJeU7fnn_xyes3BJXdEk_hPXQ2t9Lmm8qStU6z6IRL3D9mz3vr18/pub?gid=238962273&single=true&output=csv",
-    doc: "Javier",
-  },
-  NEGRO: {
-    url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT85g5Une2zDfOwdYFSpjBoC3ZqJJeU7fnn_xyes3BJXdEk_hPXQ2t9Lmm8qStU6z6IRL3D9mz3vr18/pub?gid=1408280719&single=true&output=csv",
-    doc: "Kike",
-  },
-};
+const SHEET_CONFIG = [
+  { key: 'CIAN',    doc: 'Germán',  range: 'cian!A1:A1000' },
+  { key: 'MAGENTA', doc: 'Gabriel', range: 'magenta!A1:A1000' },
+  { key: 'AMARILLA',doc: 'Javier',  range: 'amarilla!A1:A1000' },
+  { key: 'NEGRO',   doc: 'Kike',    range: 'negro!A1:A1000' },
+];
+
+async function getAuthClient() {
+  const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+  return new google.auth.GoogleAuth({
+    credentials: {
+      type: 'service_account',
+      project_id: process.env.GOOGLE_PROJECT_ID,
+      client_email: process.env.GOOGLE_CLIENT_EMAIL,
+      private_key: privateKey,
+    },
+    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+  });
+}
 
 export async function GET() {
+  const spreadsheetId = process.env.NEXT_PUBLIC_GOOGLE_SHEETS_ID;
   const data: ComisionData = {};
 
-  for (const [color, config] of Object.entries(CSV_URLS)) {
-    try {
-      const response = await fetch(config.url);
-      const csv = await response.text();
+  try {
+    const auth = await getAuthClient();
+    const sheets = google.sheets({ version: 'v4', auth });
 
-      const students = csv
-        .split("\n")
-        .map((line) => line.replace(/"/g, "").trim())
-        .filter((name) => name.length > 0);
+    for (const config of SHEET_CONFIG) {
+      try {
+        const response = await sheets.spreadsheets.values.get({
+          spreadsheetId,
+          range: config.range,
+        });
 
-      data[color] = {
-        doc: config.doc,
-        count: students.length,
-        students,
-      };
-    } catch (error) {
-      console.error(`Error cargando ${color}:`, error);
-      data[color] = { doc: config.doc, count: 0, students: [] };
+        const rows = response.data.values ?? [];
+        const students = rows
+          .flat()
+          .map((v) => String(v).trim())
+          .filter((name) => name.length > 0);
+
+        data[config.key] = { doc: config.doc, count: students.length, students };
+      } catch (error) {
+        console.error(`Error cargando ${config.key}:`, error);
+        data[config.key] = { doc: config.doc, count: 0, students: [] };
+      }
     }
-  }
 
-  return NextResponse.json(data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('Error de autenticación:', error);
+    return NextResponse.json({ error: 'Error de autenticación con Google Sheets' }, { status: 500 });
+  }
 }
