@@ -89,4 +89,6 @@ echo ""
 echo -e "${GREEN}Tu aplicación está en:${NC}"
 echo "🔗 https://buscador-comisiones-tg1.vercel.app"
 echo ""
-echo -e "${GREEN}Repositorio en:${NC
+echo -e "${GREEN}Repositorio en:${NC}"
+echo "🔗 https://github.com/dgstudiogabriel-dg/buscador-comisiones-tg1"
+echo ""
