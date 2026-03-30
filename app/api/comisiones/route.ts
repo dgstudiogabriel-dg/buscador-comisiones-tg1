@@ -6,10 +6,10 @@ interface ComisionData {
 }
 
 const SHEET_CONFIG = [
-  { key: 'CIAN',    doc: 'Germán',  range: 'cian!A1:A1000' },
-  { key: 'MAGENTA', doc: 'Gabriel', range: 'magenta!A1:A1000' },
-  { key: 'AMARILLA',doc: 'Javier',  range: 'amarilla!A1:A1000' },
-  { key: 'NEGRO',   doc: 'Kike',    range: 'negro!A1:A1000' },
+  { key: 'CIAN',    doc: 'Germán',  range: 'cian_german!A1:A1000' },
+  { key: 'MAGENTA', doc: 'Gabriel', range: 'magenta_gabriel!A1:A1000' },
+  { key: 'AMARILLA',doc: 'Javier',  range: 'amarillo_javier!A1:A1000' },
+  { key: 'NEGRO',   doc: 'Kike',    range: 'negro_kike!A1:A1000' },
 ];
 
 async function getAuthClient() {
